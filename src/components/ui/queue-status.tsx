@@ -13,9 +13,9 @@ export function QueueStatus() {
 
   const handleRefresh = () => {
     toast.promise(refresh(), {
-      loading: 'Uppdaterar köstatus...',
-      success: 'Köstatus uppdaterad',
-      error: 'Kunde inte uppdatera köstatus'
+      loading: 'Updating the queue status...',
+      success: 'Queue status updated',
+      error: 'Could not update queue status'
     });
   };
 
@@ -70,7 +70,7 @@ export function QueueStatus() {
         className="bg-gray-04/80 backdrop-blur-sm rounded-[20px] p-6"
       >
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-3xl text-gray-01">Systemstatus</h3>
+          <h3 className="text-3xl text-gray-01">System status</h3>
           <Button
             variant="ghost"
             size="sm"
@@ -78,7 +78,7 @@ export function QueueStatus() {
             className="text-gray-02 hover:text-gray-01"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-            Uppdatera
+            Update
           </Button>
         </div>
 
@@ -115,7 +115,7 @@ export function QueueStatus() {
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
               <div className="text-6xl text-gray-01">{total}</div>
-              <div className="text-base text-gray-02">Totalt antal jobb</div>
+              <div className="text-base text-gray-02">Total number of jobs</div>
             </div>
           </div>
 
@@ -125,7 +125,7 @@ export function QueueStatus() {
               <div className="absolute inset-0 bg-gradient-to-br from-blue-02/30 to-blue-04/30" />
               <div className="relative p-6">
                 <div className="text-5xl text-blue-01">{totals.active}</div>
-                <div className="text-lg text-blue-01/80">Aktiva</div>
+                <div className="text-lg text-blue-01/80">Active</div>
               </div>
             </div>
             
@@ -133,7 +133,7 @@ export function QueueStatus() {
               <div className="absolute inset-0 bg-gradient-to-br from-orange-02/30 to-orange-04/30" />
               <div className="relative p-6">
                 <div className="text-5xl text-orange-01">{totals.waiting}</div>
-                <div className="text-lg text-orange-01/80">Väntande</div>
+                <div className="text-lg text-orange-01/80">Waiting</div>
               </div>
             </div>
             
@@ -141,7 +141,7 @@ export function QueueStatus() {
               <div className="absolute inset-0 bg-gradient-to-br from-green-02/30 to-green-04/30" />
               <div className="relative p-6">
                 <div className="text-5xl text-green-01">{totals.completed}</div>
-                <div className="text-lg text-green-01/80">Klara</div>
+                <div className="text-lg text-green-01/80">Completed</div>
               </div>
             </div>
             
@@ -149,7 +149,7 @@ export function QueueStatus() {
               <div className="absolute inset-0 bg-gradient-to-br from-pink-02/30 to-pink-04/30" />
               <div className="relative p-6">
                 <div className="text-5xl text-pink-01">{totals.failed}</div>
-                <div className="text-lg text-pink-01/80">Misslyckade</div>
+                <div className="text-lg text-pink-01/80">Failed</div>
               </div>
             </div>
           </div>
@@ -222,7 +222,7 @@ export function QueueStatus() {
                       {stage.name}
                     </h4>
                     <p className={`text-base ${textColors[status]}/70`}>
-                      {stats.active + stats.waiting} jobb i kö
+                      {stats.active + stats.waiting} jobs in queue
                     </p>
                   </div>
                 </div>
@@ -230,19 +230,19 @@ export function QueueStatus() {
               
               <div className="grid grid-cols-4 border-t border-gray-03">
                 <div className="p-3 text-center border-r border-gray-03">
-                  <p className={`text-base ${textColors[status]}/70`}>Aktiva</p>
+                  <p className={`text-base ${textColors[status]}/70`}>Active</p>
                   <p className={`text-2xl ${textColors[status]}`}>{stats.active}</p>
                 </div>
                 <div className="p-3 text-center border-r border-gray-03">
-                  <p className={`text-base ${textColors[status]}/70`}>Väntande</p>
+                  <p className={`text-base ${textColors[status]}/70`}>Waiting</p>
                   <p className={`text-2xl ${textColors[status]}`}>{stats.waiting}</p>
                 </div>
                 <div className="p-3 text-center border-r border-gray-03">
-                  <p className={`text-base ${textColors[status]}/70`}>Klara</p>
+                  <p className={`text-base ${textColors[status]}/70`}>Completed</p>
                   <p className={`text-2xl ${textColors[status]}`}>{stats.completed}</p>
                 </div>
                 <div className="p-3 text-center">
-                  <p className={`text-base ${textColors[status]}/70`}>Fel</p>
+                  <p className={`text-base ${textColors[status]}/70`}>Failed</p>
                   <p className={`text-2xl ${textColors[status]}`}>{stats.failed}</p>
                 </div>
               </div>

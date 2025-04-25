@@ -12,10 +12,6 @@ import {
   ChevronRight, 
   ChevronsDown, 
   ChevronsUp,
-  AlertCircle,
-  Check,
-  X,
-  AlertTriangle,
   HelpCircle
 } from 'lucide-react';
 import { useGroupedCompanies } from '@/hooks/useGroupedCompanies';
