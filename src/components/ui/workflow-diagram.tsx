@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import mermaid from 'mermaid';
-import { useQueueStats } from '@/hooks/useQueueStats';
+import { useQueuesStats } from '@/hooks/useQueuesStats';
 
 // Initialize mermaid with dark theme configuration
 mermaid.initialize({
@@ -24,14 +24,14 @@ mermaid.initialize({
 });
 
 export function WorkflowDiagram() {
-  const { queueStats } = useQueueStats();
+  const { queuesStats } = useQueuesStats();
   const [svg, setSvg] = React.useState<string>('');
 
   // Create the diagram with job counts
   const diagram = React.useMemo(() => {
     const getQueueStats = (queueId: string) => {
-      const stats = queueStats[queueId] || { active: 0, waiting: 0 };
-      const total = stats.active + stats.waiting;
+      const stats = queuesStats?.find(q => q.name === queueId)?.status ?? { active: 0, waiting: 0 };
+      const total = (stats.active ?? 0) + (stats.waiting ?? 0); 
       return total > 0 ? `<br/>(${total})` : '';
     };
 
@@ -146,15 +146,15 @@ export function WorkflowDiagram() {
         classDef failed fill:#F0759A,stroke:#97455D,color:#F7F7F7
 
         %% Apply styles based on queue status
-        ${Object.entries(queueStats).map(([queueId, stats]) => {
-          if (stats.active > 0) return `class ${queueId} active`;
-          if (stats.waiting > 0) return `class ${queueId} waiting`;
-          if (stats.failed > 0) return `class ${queueId} failed`;
-          if (stats.completed > 0) return `class ${queueId} completed`;
+        ${(queuesStats || []).map(({name, status}) => {
+          if (status?.active && status?.active > 0) return `class ${name} active`;
+          if (status?.waiting && status.waiting > 0) return `class ${name} waiting`;
+          if (status?.failed && status.failed > 0) return `class ${name} failed`;
+          if (status?.completed && status.completed > 0) return `class ${name} completed`;
           return '';
         }).filter(Boolean).join('\n')}
     `;
-  }, [queueStats]);
+  }, [queuesStats]);
 
   React.useEffect(() => {
     const renderDiagram = async () => {

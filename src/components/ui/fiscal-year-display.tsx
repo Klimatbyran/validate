@@ -11,7 +11,7 @@ interface FiscalYearProps {
 
 export function FiscalYearDisplay({ data }: FiscalYearProps) {
   if (!data.fiscalYear) {
-    return null;
+    return <></>;
   }
 
   // Get month names in Swedish
@@ -35,25 +35,25 @@ export function FiscalYearDisplay({ data }: FiscalYearProps) {
     <div className="bg-gray-04 rounded-lg p-4 border border-gray-03/20">
       <div className="flex items-center mb-2">
         <Calendar className="w-5 h-5 text-blue-03 mr-2" />
-        <h3 className="text-lg font-medium text-gray-01">Räkenskapsår {data.fiscalYear}</h3>
+        <h3 className="text-lg font-medium text-gray-01">Financial year {data.fiscalYear}</h3>
       </div>
       
       {(startMonth && endMonth) ? (
         <div className="mt-2">
           <div className="flex items-center justify-between bg-gray-03/20 rounded-lg p-3">
             <div className="text-center flex-1">
-              <div className="text-sm text-gray-02">Startmånad</div>
+              <div className="text-sm text-gray-02">Start month</div>
               <div className="font-medium text-gray-01">{startMonth}</div>
             </div>
             <div className="h-8 border-r border-gray-03/50"></div>
             <div className="text-center flex-1">
-              <div className="text-sm text-gray-02">Slutmånad</div>
+              <div className="text-sm text-gray-02">End month</div>
               <div className="font-medium text-gray-01">{endMonth}</div>
             </div>
           </div>
         </div>
       ) : (
-        <p className="text-sm text-gray-02">Räkenskapsåret {data.fiscalYear}</p>
+        <p className="text-sm text-gray-02">Financial year {data.fiscalYear}</p>
       )}
     </div>
   );

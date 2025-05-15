@@ -16,24 +16,18 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://stage-api.klimatkollen.se',
+        target: 'http://localhost:3001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/admin/queues/api'),
         secure: false,
         timeout: 30000, // Increase timeout to 30 seconds
         proxyTimeout: 30000, // Increase proxy timeout to 30 seconds
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
-            console.log('proxy error', err);
           });
           proxy.on('proxyReq', (proxyReq, req, _res) => {
             // Add custom headers
             proxyReq.setHeader('Connection', 'keep-alive');
             proxyReq.setHeader('Keep-Alive', 'timeout=30');
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
           });
         }
       },

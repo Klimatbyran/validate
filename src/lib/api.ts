@@ -1,9 +1,7 @@
 import axios, { AxiosError } from 'axios';
-import { QueuesResponse, QueuesResponseSchema, QueueJobsResponse, QueueJobsResponseSchema } from './types';
-import { toast } from 'sonner';
-
+import { QueuesResponse, QueuesResponseSchema, QueueJobsResponse, QueueJobsResponseSchema, QueuesStats } from './types';
 import { Observable, Subject, from, of, timer, concat, throwError, EMPTY } from 'rxjs';
-import { mergeMap, concatMap, tap, catchError, delay, map, share, finalize, expand, takeWhile, scan } from 'rxjs/operators';
+import { mergeMap, concatMap, tap, catchError, delay, map, share, finalize, expand, takeWhile, scan, filter } from 'rxjs/operators';
 
 // RxJS-based rate limiter for API requests
 class RxRateLimiter {
@@ -33,8 +31,14 @@ class RxRateLimiter {
           )
         );
       })
+    ).pipe(
+      filter(item => item !== null)
     ).subscribe(
       (item) => {
+        if (!item) {
+          console.log("item is null");
+          return;
+        }
         if (item.error) {
           item.observer.error(item.error);
         } else {
@@ -137,6 +141,11 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export async function fetchQueuesStats(): Promise<QueuesStats> {
+  const response = await api.get<QueuesStats>('/queues/stats');
+  return response.data;
+}
 
 export function fetchQueueJobs(
   queueName: string, 
