@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-service
+  name: validate-frontend
   namespace: garbo-stage
 spec:
   selector:
-    app: frontend
+    app: validate-frontend
   ports:
   - port: 80
     targetPort: 80
