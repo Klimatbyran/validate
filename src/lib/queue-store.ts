@@ -7,8 +7,7 @@ import { fetchQueueJobs, fetchAllHistoricalJobs } from './api';
 
 export class QueueStore {
   private queues: Record<string, BehaviorSubject<Queue | null>> = {};
-  private pollingIntervals: Record<string, NodeJS.Timeout> = {};
-  // Track which queues have completed historical loading
+  private pollingIntervals: Record<string, number> = {};
   private historicallyLoaded = new Set<string>();
   private groupedCompanies$ = new BehaviorSubject<GroupedCompany[]>([]);
   private queueStats$ = new BehaviorSubject<QueueStatsState>({
@@ -24,7 +23,6 @@ export class QueueStore {
   });
 
   constructor() {
-    console.log('🏗️ Initializing QueueStore');
     WORKFLOW_STAGES.forEach(stage => {
       this.queues[stage.id] = new BehaviorSubject<Queue | null>(null);
     });
@@ -124,7 +122,6 @@ export class QueueStore {
         this.groupedCompanies$.next(companies);
       },
       error => {
-        console.error('❌ Pipeline error:', error);
         this.groupedCompanies$.next([]);
       }
     );
@@ -180,11 +177,8 @@ export class QueueStore {
   // Load historical data for a queue and then start polling for updates
   loadQueueWithUpdates(queueId: string): void {
     if (this.historicallyLoaded.has(queueId)) {
-      console.log(`🔄 Queue ${queueId} already loaded historically, skipping`);
       return;
     }
-    
-    console.log(`📚 Starting historical load for queue ${queueId}`);
     
     // Steg 1: Ladda alla historiska jobb (äldst först) reaktivt
     fetchAllHistoricalJobs(queueId).pipe(
@@ -194,13 +188,11 @@ export class QueueStore {
         
         // Markera som historiskt laddad
         this.historicallyLoaded.add(queueId);
-        console.log(`✅ Completed historical load for queue ${queueId}`);
         
         // Steg 2: Starta polling för uppdateringar (nyast först)
         this.pollQueueUpdates(queueId);
       }),
       catchError(error => {
-        console.error(`❌ Error in loadQueueWithUpdates for ${queueId}:`, error);
         return EMPTY;
       })
     ).subscribe();
@@ -208,8 +200,6 @@ export class QueueStore {
   
   // Poll for updates to a queue
   private pollQueueUpdates(queueId: string): void {
-    console.log(`🔄 Starting update polling for queue ${queueId}`);
-    
     // Use a separate interval for each queue to avoid overwhelming the server
     const intervalId = setInterval(async () => {
       try {
@@ -217,7 +207,7 @@ export class QueueStore {
         const updates = await fetchQueueJobs(queueId, 'latest', 1, 10, 'desc');
         this.updateQueue(queueId, updates.queue);
       } catch (error) {
-        console.error(`❌ Error polling updates for ${queueId}:`, error);
+        // Silently handle polling errors
       }
     }, 1000); // Poll every second
     
@@ -230,7 +220,6 @@ export class QueueStore {
     if (this.pollingIntervals[queueId]) {
       clearInterval(this.pollingIntervals[queueId]);
       delete this.pollingIntervals[queueId];
-      console.log(`⏹️ Stopped polling updates for queue ${queueId}`);
     }
   }
 }

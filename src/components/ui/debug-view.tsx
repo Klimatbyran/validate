@@ -18,15 +18,12 @@ export function DebugView() {
   useEffect(() => {
     if (!queues) return;
     
-    console.log('Processing queues data:', queues);
-    
     try {
       // Create an observable from the queues data
       const subscription = from(queues).pipe(
         // Flatten the jobs from all queues
         mergeMap(queue => {
           if (!queue || !queue.jobs || !Array.isArray(queue.jobs)) {
-            console.warn('Invalid queue data:', queue);
             return of([]);
           }
           return from(queue.jobs).pipe(
@@ -40,45 +37,35 @@ export function DebugView() {
         toArray(),
         // Sort by timestamp, newest first
         map(jobs => {
-          console.log(`Processed ${jobs.length} jobs`);
           return jobs.sort((a, b) => b.timestamp - a.timestamp);
         }),
         // Handle errors
         catchError(err => {
-          console.error('Error processing jobs:', err);
           return of([]);
         })
       ).subscribe({
         next: processedJobs => {
-          console.log(`Setting ${processedJobs.length} processed jobs`);
           setAllJobs(processedJobs);
         },
         error: err => {
-          console.error('Error in jobs subscription:', err);
           setAllJobs([]);
         },
         complete: () => {
-          console.log('Jobs processing completed');
         }
       });
       
       return () => {
-        console.log('Cleaning up jobs subscription');
         subscription.unsubscribe();
       };
     } catch (error) {
-      console.error('Unexpected error in useEffect:', error);
       setAllJobs([]);
     }
   }, [queues]);
 
   const handleRefresh = () => {
-    console.log('Refreshing debug view...');
     toast.promise(
       refresh().then(() => {
-        console.log('Debug view refresh completed');
       }).catch(err => {
-        console.error('Debug view refresh failed:', err);
         throw err;
       }),
       {

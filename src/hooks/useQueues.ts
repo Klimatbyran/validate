@@ -36,7 +36,6 @@ export function useQueues(page = 1, jobsPerPage = 20) {
               queueStore.updateQueue(stage.id, queue);
             }),
             catchError(error => {
-              console.error(`❌ Failed to fetch queue ${stage.id}:`, error);
               return of(null); // Returnera null för misslyckade köer
             })
           );
@@ -68,7 +67,6 @@ export function useQueues(page = 1, jobsPerPage = 20) {
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
       onError: (error) => {
-        console.error('❌ Queue fetch error:', error);
         toast.error('Kunde inte hämta ködata: ' + error.message);
       }
     }
@@ -81,7 +79,6 @@ export function useQueues(page = 1, jobsPerPage = 20) {
     isError: !!error,
     error,
     refresh: () => {
-      console.log('🔄 Manually refreshing queues');
       return mutate();
     },
   };

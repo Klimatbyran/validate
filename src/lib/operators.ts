@@ -5,23 +5,9 @@ import type { Queue, QueueJob, CompanyStatus, GroupedCompany } from './types';
 // Group queues into a stream of jobs with queue information
 export function groupQueues(): OperatorFunction<{ queueId: string; queue: Queue | null }[], QueueJob[]> {
   return pipe(
-    tap(queues => {
-      console.log('🔍 Incoming queues:', queues.map(q => ({
-        queueId: q.queueId,
-        jobCount: q.queue?.jobs.length || 0
-      })));
-    }),
     mergeMap(queues => from(queues.flatMap(({ queueId, queue }) => 
       queue?.jobs.map(job => ({ ...job, queueId })) || []
     ))),
-    tap(job => {
-      console.log('📦 Processing job:', {
-        id: job.id,
-        queueId: job.queueId,
-        companyName: job.data.companyName,
-        threadId: job.data.threadId
-      });
-    }),
     share() // Share the stream between multiple subscribers
   );
 }
@@ -31,14 +17,6 @@ export function groupQueues(): OperatorFunction<{ queueId: string; queue: Queue 
 // och blockerande metoder som toArray() är FÖRBJUDNA.
 export function groupByCompany(): OperatorFunction<QueueJob, GroupedCompany[]> {
   return pipe(
-    // Logga inkommande jobb
-    tap(job => {
-      console.log('👥 Processing job:', {
-        id: job.id,
-        companyName: job.data.companyName,
-        threadId: job.data.threadId
-      });
-    }),
     // Steg 1: Gruppera jobb efter threadId för att hantera jobb i samma tråd tillsammans
     groupBy(
       job => job.data.threadId || job.id,
@@ -125,9 +103,6 @@ export function groupByCompany(): OperatorFunction<QueueJob, GroupedCompany[]> {
         element: job => job
       }
     ),
-    tap(group => {
-      console.log('🏢 Created company group:', group.key);
-    }),
     // Steg 4: Bearbeta varje företagsgrupp
     mergeMap(group => {
       // Använd scan istället för BehaviorSubject för att bygga upp företagsstate
@@ -252,23 +227,7 @@ export function groupByCompany(): OperatorFunction<QueueJob, GroupedCompany[]> {
       )
     ),
     
-    // Log the current state
-    tap(companies => {
-      // Säkerställ att companies är en array innan vi försöker använda length och reduce
-      if (!companies || !Array.isArray(companies)) {
-        console.log('📈 Current companies state: No companies available');
-        return;
-      }
-      
-      console.log('📈 Current companies state:', {
-        companyCount: companies.length,
-        totalAttempts: companies.reduce((sum, company) => 
-          sum + (company?.attempts?.length || 0), 0
-        )
-      });
-    }),
     catchError(error => {
-      console.error('❌ Error in groupByCompany:', error);
       return of([]);
     }),
     share() // Share the stream between multiple subscribers

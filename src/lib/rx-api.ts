@@ -66,7 +66,6 @@ export class RxHttpClient {
               const jitter = Math.random() * 1000;
               const delay = Math.min(1000 * (2 ** retryAttempt) + jitter, 10000);
               
-              console.log(`🔄 Retrying request (${retryAttempt}/3) after ${delay}ms`);
               return timer(delay);
             }
             
@@ -75,11 +74,9 @@ export class RxHttpClient {
         )
       ),
       catchError(error => {
-        console.error('❌ Request error:', error);
         return throwError(() => error);
       }),
       finalize(() => {
-        console.log('🏁 Request finalized');
       })
     );
   }
@@ -99,7 +96,6 @@ export const rxHttp = new RxHttpClient({
 // Helper function to handle API errors in a reactive way
 export function handleApiErrorRx(error: any, context?: string): Observable<never> {
   const errorPrefix = context ? `[${context}] ` : '';
-  console.error(`❌ API Error ${errorPrefix}:`, error);
 
   let errorMessage: string;
 
@@ -117,10 +113,6 @@ export function handleApiErrorRx(error: any, context?: string): Observable<never
     } else {
       const statusCode = error.response.status;
       const responseData = error.response.data;
-      
-      // Log detailed error information
-      console.error('Response status:', statusCode);
-      console.error('Response data:', responseData);
       
       switch (statusCode) {
         case 401:

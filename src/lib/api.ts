@@ -35,11 +35,23 @@ class RxRateLimiter {
       })
     ).subscribe(
       (item) => {
+        if (!item || !item.observer) {
+          return;
+        }
+        
         if (item.error) {
-          item.observer.error(item.error);
+          try {
+            item.observer.error(item.error);
+          } catch (err) {
+            // Observer might be closed, ignore
+          }
         } else {
-          item.observer.next(item.result);
-          item.observer.complete();
+          try {
+            item.observer.next(item.result);
+            item.observer.complete();
+          } catch (err) {
+            // Observer might be closed, ignore
+          }
         }
       }
     );
@@ -48,16 +60,33 @@ class RxRateLimiter {
   throttle<T>(fn: () => Promise<T>): Observable<T> {
     return new Observable<T>(observer => {
       if (!observer) {
-        console.error('Observer is undefined in throttle method');
         return;
       }
       
       this.queue$.next({
         fn,
         observer: {
-          next: (value) => observer.next(value),
-          error: (err) => observer.error(err),
-          complete: () => observer.complete()
+          next: (value) => {
+            try {
+              observer.next(value);
+            } catch (err) {
+              // Observer might be closed, ignore
+            }
+          },
+          error: (err) => {
+            try {
+              observer.error(err);
+            } catch (error) {
+              // Observer might be closed, ignore
+            }
+          },
+          complete: () => {
+            try {
+              observer.complete();
+            } catch (err) {
+              // Observer might be closed, ignore
+            }
+          }
         }
       });
       
@@ -104,7 +133,6 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error('❌ Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -145,7 +173,6 @@ export function fetchQueueJobs(
   jobsPerPage = 20,
   sortOrder: 'asc' | 'desc' = 'desc'
 ): Promise<QueueJobsResponse> {
-  console.log(`🔍 Fetching queue jobs for ${queueName}... (page ${page}, ${sortOrder})`);
   
   // Create an observable for the API request
   return new Promise((resolve, reject) => {
@@ -168,20 +195,17 @@ export function fetchQueueJobs(
         },
       }))
       .pipe(
-        tap(response => console.log(`✅ Received response for ${queueName}:`, response.data)),
         map(response => {
           try {
             // Validate the response
             const parsed = QueuesResponseSchema.safeParse(response.data);
             if (!parsed.success) {
-              console.error(`❌ Invalid response data for ${queueName}:`, parsed.error);
               throw new Error(`Ogiltig data från servern: ${parsed.error.message}`);
             }
 
             // Find the requested queue
             const queue = parsed.data.queues.find(q => q.name === queueName);
             if (!queue) {
-              console.warn(`⚠️ Queue "${queueName}" not found in response`);
               // Return empty queue instead of throwing
               return { 
                 queue: { 
@@ -193,7 +217,6 @@ export function fetchQueueJobs(
 
             return { queue };
           } catch (error) {
-            console.error(`❌ Error processing response for ${queueName}:`, error);
             // Return empty queue instead of throwing
             return { 
               queue: { 
@@ -204,7 +227,6 @@ export function fetchQueueJobs(
           }
         }),
         catchError(error => {
-          console.error(`❌ Error in fetchQueueJobs for ${queueName}:`, error);
           try {
             const handledError = handleApiError(error, queueName);
             return throwError(() => handledError);
@@ -213,29 +235,23 @@ export function fetchQueueJobs(
           }
         }),
         finalize(() => {
-          console.log(`🏁 Request for ${queueName} finalized`);
         })
       ).subscribe({
         next: (result) => {
-          console.log(`✅ Successfully fetched queue jobs for ${queueName}`);
           resolve(result);
         },
         error: (error) => {
-          console.error(`❌ Error in subscription for ${queueName}:`, error);
           reject(error);
         },
         complete: () => {
-          console.log(`✅ Subscription for ${queueName} completed`);
         }
       });
       
       // Return cleanup function
       return () => {
-        console.log(`🧹 Cleaning up subscription for ${queueName}`);
         subscription.unsubscribe();
       };
     } catch (error) {
-      console.error(`❌ Unexpected error in fetchQueueJobs for ${queueName}:`, error);
       reject(error);
     }
   });
@@ -249,7 +265,6 @@ export function fetchAllHistoricalJobs(
   queueName: string,
   jobsPerPage = 50
 ): Observable<QueueJobsResponse> {
-  console.log(`📚 Loading historical jobs for ${queueName}...`);
   
   // Skapa en initial tom respons
   const emptyResponse: QueueJobsResponse = { 
@@ -268,14 +283,12 @@ export function fetchAllHistoricalJobs(
         expand(page => 
           from(fetchQueueJobs(queueName, 'latest', page, jobsPerPage, 'asc')).pipe(
             map(response => {
-              console.log(`📄 Processing page ${page} response for ${queueName}:`, response);
               return {
                 response: response || emptyResponse,
                 nextPage: response?.queue?.jobs?.length === jobsPerPage ? page + 1 : null
               };
             }),
             catchError(error => {
-              console.error(`❌ Error loading page ${page} for ${queueName}:`, error);
               return of({ response: emptyResponse, nextPage: null });
             })
           )
@@ -287,7 +300,6 @@ export function fetchAllHistoricalJobs(
           if (!acc.queue?.jobs?.length) return response || emptyResponse;
           
           if (!response?.queue) {
-            console.warn(`⚠️ Missing queue in response for ${queueName}`);
             return acc;
           }
           
@@ -298,14 +310,12 @@ export function fetchAllHistoricalJobs(
             }
           };
         }, emptyResponse),
-        // Logga framsteg
-        tap(result => console.log(`📊 Loaded ${result.queue.jobs.length} jobs so far for ${queueName}`)),
       );
   };
   // Starta hämtningen av alla sidor
   return fetchPages().pipe(
     // Slutlig loggning när alla sidor är hämtade
-    finalize(() => console.log(`✅ Completed loading historical jobs for ${queueName}`)),
+    finalize(() => {}),
     // Dela strömmen för att undvika att köra om hela pipeline för varje subscriber
     share()
   );
@@ -313,7 +323,6 @@ export function fetchAllHistoricalJobs(
 
 function handleApiError(error: unknown, context?: string): Error {
   const errorPrefix = context ? `[${context}] ` : '';
-  console.error(`❌ API Error ${errorPrefix}:`, error);
 
   if (error instanceof AxiosError) {
     if (!error.response) {
@@ -331,10 +340,6 @@ function handleApiError(error: unknown, context?: string): Error {
     
     const statusCode = error.response.status;
     const responseData = error.response.data;
-    
-    // Log detailed error information
-    console.error('Response status:', statusCode);
-    console.error('Response data:', responseData);
     
     switch (statusCode) {
       case 401:
@@ -359,6 +364,5 @@ function handleApiError(error: unknown, context?: string): Error {
   
   // For non-Axios errors, try to extract useful information
   const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error('Detailed error:', error);
   return new Error(`${errorPrefix}Ett oväntat fel uppstod: ${errorMessage}`);
 }
